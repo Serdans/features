@@ -12,6 +12,6 @@
     },
     "installsAfter": [
         "ghcr.io/devcontainers/features/common-utils",
-        "ghcr.io/astral-sh/devcontainer-features/uv:1" 
+        "ghcr.io/devcontainers-extra/features/uv:1"
     ]
 }
