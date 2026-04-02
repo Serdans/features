@@ -4,37 +4,41 @@ set -e
 VERSION=${VERSION:-"latest"}
 PACKAGE="mistral-vibe"
 
-echo "(*) Activating Mistral Vibe installation..."
+echo "(*) Installing Mistral Vibe..."
 
-# 1. Expand PATH to include all possible locations where uv might be
+# 1. Ensure the current script can see uv
+# Standard features usually put uv in /usr/local/bin or the user's .local/bin
 export PATH="/usr/local/bin:/root/.local/bin:$HOME/.local/bin:$PATH"
 
-# 2. If uv is still missing, install it as a fallback
+# 2. Verify uv exists
 if ! command -v uv >/dev/null 2>&1; then
-    echo "(!) uv not found. Installing uv automatically..."
+    echo "(!) uv not found in PATH. Attempting quick local install..."
     curl -LsSf https://astral.sh/uv/install.sh | sh
-    # Add the newly installed uv to the path for this session
-    export PATH="/root/.local/bin:$PATH"
+    export PATH="$HOME/.local/bin:$PATH"
 fi
 
-# 3. Determine the user and their home directory
+# 3. Handle the User Context
+# In standard images, _REMOTE_USER is usually 'vscode'. 
+# We want the 'vibe' tool available in their specific PATH.
 USERNAME=${_REMOTE_USER:-"root"}
 USER_HOME=$(getent passwd "$USERNAME" | cut -d: -f6)
 
-# 4. Perform the installation
+# 4. Define the version specifier
 if [ "${VERSION}" = "latest" ]; then
     INSTALL_SPEC="${PACKAGE}"
 else
     INSTALL_SPEC="${PACKAGE}==${VERSION}"
 fi
 
-echo "(*) Installing ${INSTALL_SPEC}..."
+# 5. Install the tool
+echo "(*) Installing ${INSTALL_SPEC} for user: ${USERNAME}"
 
-# We run this through 'su' to ensure the tool is available to the remote user
 if [ "$USERNAME" != "root" ]; then
-    su "$USERNAME" -c "export PATH=\"$PATH\"; uv tool install ${INSTALL_SPEC} --force"
+    # We run as the user to ensure the tool is installed in their home (~/.local/bin)
+    # and that they own the resulting files.
+    su "$USERNAME" -c "export PATH=\$PATH; uv tool install ${INSTALL_SPEC} --force"
 else
     uv tool install "${INSTALL_SPEC}" --force
 fi
 
-echo "(*) Mistral Vibe installation successful!"
+echo "(*) Mistral Vibe installation complete!"
