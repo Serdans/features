@@ -4,29 +4,37 @@ set -e
 VERSION=${VERSION:-"latest"}
 PACKAGE="mistral-vibe"
 
-echo "Activating Mistral Vibe installation..."
+echo "(*) Activating Mistral Vibe installation..."
 
-# 1. Manually add common uv installation paths to the current script's PATH
+# 1. Expand PATH to include all possible locations where uv might be
 export PATH="/usr/local/bin:/root/.local/bin:$HOME/.local/bin:$PATH"
 
-# 2. Verify uv is actually there now
+# 2. If uv is still missing, install it as a fallback
 if ! command -v uv >/dev/null 2>&1; then
-    echo "ERROR: uv is still not found in PATH ($PATH)."
-    echo "Ensure the uv feature is installed correctly."
-    exit 1
+    echo "(!) uv not found. Installing uv automatically..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    # Add the newly installed uv to the path for this session
+    export PATH="/root/.local/bin:$PATH"
 fi
 
-# 3. Construct the package string
+# 3. Determine the user and their home directory
+USERNAME=${_REMOTE_USER:-"root"}
+USER_HOME=$(getent passwd "$USERNAME" | cut -d: -f6)
+
+# 4. Perform the installation
 if [ "${VERSION}" = "latest" ]; then
     INSTALL_SPEC="${PACKAGE}"
 else
     INSTALL_SPEC="${PACKAGE}==${VERSION}"
 fi
 
-echo "Installing ${INSTALL_SPEC} using $(command -v uv)..."
+echo "(*) Installing ${INSTALL_SPEC}..."
 
-# 4. Install the tool
-# Using --force to handle reinstalls/updates
-uv tool install "${INSTALL_SPEC}" --force
+# We run this through 'su' to ensure the tool is available to the remote user
+if [ "$USERNAME" != "root" ]; then
+    su "$USERNAME" -c "export PATH=\"$PATH\"; uv tool install ${INSTALL_SPEC} --force"
+else
+    uv tool install "${INSTALL_SPEC}" --force
+fi
 
-echo "Installation successful!"
+echo "(*) Mistral Vibe installation successful!"
