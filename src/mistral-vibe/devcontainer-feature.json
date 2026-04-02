@@ -1,0 +1,17 @@
+{
+    "name": "Mistral Vibe",
+    "id": "mistral-vibe",
+    "version": "1.0.0",
+    "description": "Mistral Vibe CLI installed via uv",
+    "options": {
+        "version": {
+            "type": "string",
+            "default": "latest",
+            "description": "Select the version of Mistral Vibe (e.g., 1.2.3 or latest)"
+        }
+    },
+    "installsAfter": [
+        "ghcr.io/devcontainers/features/common-utils",
+        "ghcr.io/astral-sh/devcontainer-features/uv:1" 
+    ]
+}
