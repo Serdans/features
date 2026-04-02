@@ -2,19 +2,10 @@
     "install_latest": {
         "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
         "features": {
-            "uv": "1",
+            "ughcr.io/devcontainers-extra/features/uvv:1": {},
             "mistral-vibe": {
                 "version": "latest"
             }
         }
     },
-    "install_specific_version": {
-        "image": "mcr.microsoft.com/devcontainers/base:debian",
-        "features": {
-            "uv": "1",
-            "mistral-vibe": {
-                "version": "0.1.0"
-            }
-        }
-    }
 }
