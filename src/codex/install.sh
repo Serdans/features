@@ -62,19 +62,23 @@ echo "Installing version: ${TARGET_VERSION}"
 OS=$(uname | tr '[:upper:]' '[:lower:]')
 ARCH=$(uname -m)
 
-if [ "$ARCH" == "x86_64" ]; then
-    ARCH="x86_64"
-    TARGET="x86_64-unknown-linux-musl"
-elif [ "$ARCH" == "i686" ]; then
-    ARCH="i386"
-    TARGET="i686-unknown-linux-musl"
-elif [ "$ARCH" == "armv7l" ]; then
-    ARCH="armv7"
-    TARGET="armv7-unknown-linux-gnueabihf"
-elif [ "$ARCH" == "aarch64" ]; then
-    ARCH="arm64"
-    TARGET="aarch64-unknown-linux-gnu"
+if [ "$OS" == "linux" ]; then
+    if [ "$ARCH" == "x86_64" ]; then
+        TARGET="x86_64-unknown-linux-musl"
+    elif [ "$ARCH" == "aarch64" ]; then
+        TARGET="aarch64-unknown-linux-musl"
+    else
+        echo "Unsupported architecture: $ARCH"
+        exit 1
+    fi
+elif [ "$OS" == "darwin" ]; then
+    if [ "$ARCH" == "arm64" ] || [ "$ARCH" == "aarch64" ]; then
+        TARGET="aarch64-apple-darwin"
+    else
+        TARGET="x86_64-apple-darwin"
+    fi
 fi
+
 
 # Create a temporary directory for the download
 TMP_DIR=$(mktemp -d)
