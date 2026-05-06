@@ -2,5 +2,12 @@
     "name": "codex",
     "id": "codex",
     "version": "1.0.0",
-    "description": "A CLI for AI-assisted coding, using OpenAI models to help with programming tasks - chat-driven development with code execution capability. Always installs the latest version."
+    "description": "A CLI for AI-assisted coding, using OpenAI models to help with programming tasks - chat-driven development with code execution capability.",
+    "options": {
+        "version": {
+            "type": "string",
+            "default": "latest",
+            "description": "Select the version of Codex (e.g., 1.2.3 or latest)"
+        }
+    }
 }

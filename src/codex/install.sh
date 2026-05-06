@@ -45,9 +45,18 @@ get_latest_version() {
     echo "$VERSION_TAG"
 }
 
+# If for some reason it's unset, we still default to "latest"
+TARGET_VERSION=${VERSION:-"latest"}
+
+# Check if we need to auto-expand
+if [ "${TARGET_VERSION}" = "latest" ]; then
+    echo "Version set to 'latest'. Determining actual version..."
+    TARGET_VERSION=$(get_latest_version)
+fi
+
+
 # Install specified or latest version
-VERSION=${VERSION:-$(get_latest_version)}
-echo "Installing version: $VERSION"
+echo "Installing version: ${TARGET_VERSION}"
 
 # Determine the OS and architecture
 OS=$(uname | tr '[:upper:]' '[:lower:]')
@@ -72,8 +81,8 @@ TMP_DIR=$(mktemp -d)
 cd "$TMP_DIR" || exit
 
 # First check what assets are available in the release
-RELEASE_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/tags/$VERSION"
-echo "Checking available assets for release: $VERSION"
+RELEASE_URL="https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/tags/$TARGET_VERSION"
+echo "Checking available assets for release: $TARGET_VERSION"
 
 ASSETS=$(curl -s "$RELEASE_URL" | jq -r '.assets[].name' 2>/dev/null || echo "")
 
@@ -82,18 +91,18 @@ if [ -z "$ASSETS" ]; then
     echo "Could not retrieve assets list, using common release patterns"
 
     # Try common naming patterns for binary releases
-    DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$VERSION/${BINARY_NAME}-${TARGET}.zst"
+    DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$TARGET_VERSION/${BINARY_NAME}-${TARGET}.zst"
 
     echo "Attempting to download from: $DOWNLOAD_URL"
     if ! curl -L --output "${BINARY_NAME}.zst" --fail "$DOWNLOAD_URL"; then
         # Try alternative formats if zst fails
         echo "Failed to download zst format, trying tar.gz..."
-        DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$VERSION/${BINARY_NAME}-${OS}-${ARCH}.tar.gz"
+        DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$TARGET_VERSION/${BINARY_NAME}-${OS}-${ARCH}.tar.gz"
         echo "Attempting to download from: $DOWNLOAD_URL"
 
         if ! curl -L --output "${BINARY_NAME}.tar.gz" --fail "$DOWNLOAD_URL"; then
             echo "Failed to download tar.gz format, trying zip..."
-            DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$VERSION/${BINARY_NAME}-${OS}-${ARCH}.zip"
+            DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$TARGET_VERSION/${BINARY_NAME}-${OS}-${ARCH}.zip"
             echo "Attempting to download from: $DOWNLOAD_URL"
 
             if ! curl -L --output "${BINARY_NAME}.zip" --fail "$DOWNLOAD_URL"; then
@@ -131,19 +140,19 @@ else
     # Try to download in order of preference: zst, tar.gz, zip
     if [ -n "$ZST_ASSET" ]; then
         echo "Found zst asset: $ZST_ASSET"
-        DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$VERSION/$ZST_ASSET"
+        DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$TARGET_VERSION/$ZST_ASSET"
         echo "Downloading from: $DOWNLOAD_URL"
         curl -L --output "$ZST_ASSET" --fail "$DOWNLOAD_URL"
         zstd -d "$ZST_ASSET" -o "$BINARY_NAME"
     elif [ -n "$TARGZ_ASSET" ]; then
         echo "Found tar.gz asset: $TARGZ_ASSET"
-        DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$VERSION/$TARGZ_ASSET"
+        DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$TARGET_VERSION/$TARGZ_ASSET"
         echo "Downloading from: $DOWNLOAD_URL"
         curl -L --output "$TARGZ_ASSET" --fail "$DOWNLOAD_URL"
         tar -xzf "$TARGZ_ASSET"
     elif [ -n "$ZIP_ASSET" ]; then
         echo "Found zip asset: $ZIP_ASSET"
-        DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$VERSION/$ZIP_ASSET"
+        DOWNLOAD_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$TARGET_VERSION/$ZIP_ASSET"
         echo "Downloading from: $DOWNLOAD_URL"
         curl -L --output "$ZIP_ASSET" --fail "$DOWNLOAD_URL"
         unzip -q "$ZIP_ASSET"
